@@ -6,6 +6,12 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
+  '/api/bills/analyze(.*)',
+  '/api/bills/historical(.*)',
+  '/api/bills/news(.*)',
+  '/api/bills/(.*)/text(.*)', // Allow bill text fetching
+  '/api/bills/(.*)/summarize-cloud(.*)', // Allow cloud AI summarization
+  '/test(.*)', // Allow test pages
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

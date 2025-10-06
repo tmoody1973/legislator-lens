@@ -65,8 +65,10 @@ Guidelines:
    * Initialize the Q&A session
    */
   async initialize(): Promise<void> {
+    console.log('BillQASession: Initializing analyzer...');
     await this.analyzer.initialize();
 
+    console.log('BillQASession: Analyzer initialized, providing context...');
     // Provide initial context about the bill
     const contextMessage = `Here is the bill information for reference:
 
@@ -74,7 +76,9 @@ ${this.billContext}
 
 I'll be answering questions about this bill. The user may ask about provisions, impacts, stakeholders, or anything else related to this legislation.`;
 
+    console.log('BillQASession: Sending context to analyzer...');
     await this.analyzer.prompt(contextMessage);
+    console.log('BillQASession: Context sent, initialization complete!');
   }
 
   /**

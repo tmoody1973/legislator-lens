@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import BillSummary from '@/components/bills/BillSummary';
+import BillQA from '@/components/bills/BillQA';
 import BillHistoricalAnalysis from '@/components/bills/BillHistoricalAnalysis';
 import BillNewsCoverage from '@/components/bills/BillNewsCoverage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -123,9 +124,10 @@ export default async function BillPage({ params }: BillPageProps) {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="summary">AI Summary</TabsTrigger>
+          <TabsTrigger value="qa">Q&A</TabsTrigger>
           <TabsTrigger value="historical">Historical Analysis</TabsTrigger>
           <TabsTrigger value="news">News Coverage</TabsTrigger>
         </TabsList>
@@ -161,6 +163,16 @@ export default async function BillPage({ params }: BillPageProps) {
             billType={billType}
             billNumber={billNumber}
             summaryTypes={['key-points', 'tl;dr']}
+          />
+        </TabsContent>
+
+        <TabsContent value="qa" className="space-y-6">
+          <BillQA
+            congress={congress}
+            billType={billType}
+            billNumber={billNumber}
+            billTitle={billTitle}
+            billSummary={billSummary}
           />
         </TabsContent>
 

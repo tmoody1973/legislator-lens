@@ -15,40 +15,62 @@ export interface PromptOptions {
 
 /**
  * Check if Chrome Prompt API (Language Model) is available
+ * Using Chrome 138+ stable API
  */
 export async function checkPromptAvailability(): Promise<PromptAvailability> {
-  try {
-    if (!('ai' in window) || !('languageModel' in (window as any).ai)) {
-      return {
-        available: false,
-        status: 'no',
-        message: 'Prompt API not supported in this browser. Please use Chrome Canary with AI flags enabled.',
-      };
-    }
-
-    const ai = (window as any).ai;
-    const capabilities = await ai.languageModel.capabilities();
-
-    if (!capabilities || capabilities.available === 'no') {
-      return {
-        available: false,
-        status: 'no',
-        message: 'Prompt API not available on this device.',
-      };
-    }
-
-    const status = capabilities.available;
-
+  if (typeof window === 'undefined') {
     return {
-      available: status === 'readily',
-      status,
-      message: status === 'readily'
-        ? 'Prompt API is ready to use'
-        : status === 'downloading'
-        ? 'AI model is downloading... Please wait.'
-        : status === 'downloadable'
-        ? 'AI model needs to be downloaded. This may require user interaction.'
-        : 'Prompt API is not available.',
+      available: false,
+      status: 'no',
+      message: 'Prompt API only available in browser',
+    };
+  }
+
+  try {
+    // Check for Chrome 138+ stable API: LanguageModel (global)
+    if (!('LanguageModel' in self)) {
+      return {
+        available: false,
+        status: 'no',
+        message: 'Prompt API not supported. Please use Chrome 138+ with built-in AI support.',
+      };
+    }
+
+    const availability = await (self as any).LanguageModel.availability();
+    console.log('Prompt API raw availability:', availability);
+
+    // Chrome Prompt API returns: 'unavailable', 'downloadable', or 'downloading'
+    // Note: There is no 'available' status - if it's ready, create() will work
+    if (availability === 'downloadable') {
+      return {
+        available: false,
+        status: 'downloadable',
+        message: 'AI model ready to download. Click to start download.',
+      };
+    }
+
+    if (availability === 'downloading') {
+      return {
+        available: false,
+        status: 'downloading',
+        message: 'AI model is downloading...',
+      };
+    }
+
+    if (availability === 'unavailable') {
+      return {
+        available: false,
+        status: 'no',
+        message: 'Prompt API is not available on this device. Check system requirements.',
+      };
+    }
+
+    // Any other status (future-proofing)
+    // Try to proceed anyway - create() might work
+    return {
+      available: true,
+      status: 'readily',
+      message: 'Prompt API status unknown, attempting to use',
     };
   } catch (error) {
     console.error('Error checking Prompt API availability:', error);
@@ -84,24 +106,38 @@ Format responses in clean, readable JSON when requested.`;
 
   /**
    * Initialize the Prompt API session
+   * Using Chrome 138+ stable API
    */
   async initialize(): Promise<void> {
+    console.log('LegislativeAnalyzer: Checking availability...');
     const availability = await checkPromptAvailability();
+    console.log('LegislativeAnalyzer: Availability result:', availability);
 
-    if (!availability.available) {
+    // Allow both 'readily' (available=true) and 'downloadable' (available=false)
+    if (availability.status === 'no') {
       throw new Error(availability.message);
     }
 
     try {
-      const ai = (window as any).ai;
+      console.log('LegislativeAnalyzer: Calling LanguageModel.create()...');
+      console.log('LegislativeAnalyzer: Status is', availability.status);
 
-      this.session = await ai.languageModel.create({
+      // Create with timeout to prevent indefinite hanging
+      const createPromise = (self as any).LanguageModel.create({
         systemPrompt: this.systemPrompt,
         temperature: this.options.temperature,
         topK: this.options.topK,
+        language: 'en', // Required: specify output language (en, es, or ja)
       });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Model creation timed out after 30 seconds. The model may still be downloading. Please try again in a moment.')), 30000);
+      });
+
+      this.session = await Promise.race([createPromise, timeoutPromise]);
+      console.log('LegislativeAnalyzer: LanguageModel.create() succeeded!');
     } catch (error) {
-      console.error('Error initializing Prompt API session:', error);
+      console.error('LegislativeAnalyzer: Error initializing Prompt API session:', error);
       throw new Error(`Failed to initialize Prompt API: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

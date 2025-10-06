@@ -5,12 +5,9 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/bills(.*)', // Allow bill pages to be public
   '/api/webhooks(.*)',
-  '/api/bills/analyze(.*)',
-  '/api/bills/historical(.*)',
-  '/api/bills/news(.*)',
-  '/api/bills/(.*)/text(.*)', // Allow bill text fetching
-  '/api/bills/(.*)/summarize-cloud(.*)', // Allow cloud AI summarization
+  '/api/bills(.*)', // Allow all bill API routes
   '/test(.*)', // Allow test pages
 ]);
 
